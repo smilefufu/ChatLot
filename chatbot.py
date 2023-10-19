@@ -81,19 +81,29 @@ class LLMBot:
         return self.chat(prompt)
     
     async def ask_med(self, question):
+        # 废弃
         result = {}
         for group_name, columns in prompts.MED_COLUMNS.items():
             prompt = prompts.MED_PROMPT.format(question=question, group_name=group_name, columns=columns)
             result[group_name] = await self.async_chat(prompt)
         return result
+    
+    async def ask_med_catetory(self, category, question, extra=None):
+        group_name = category
+        columns = prompts.MED_COLUMNS[group_name]
+        if group_name == "手术操作":
+            prompt = prompts.MED_PROMPT_SURGERY.format(question=question, columns=columns, surg="、".join(extra), len_surg=len(extra))
+        else:
+            prompt = prompts.MED_PROMPT.format(question=question, group_name=group_name, columns=columns)
+        return await self.async_chat(prompt)
 
 
 if __name__ == "__main__":
     bot = LLMBot()
-    # print(bot.ask_monthly_attendance("出勤率最低的部门是哪五个部门？"))
-    with open("info.txt", "r", encoding="utf-8") as f:
-        for line in f.readlines():
-            print(line, "\n")
-            print(bot.ask_med(line).replace("\n\n", "\n"))
-            print("\n\n===========================\n\n")
-            break
+    print(bot.ask_monthly_attendance("出勤率最低的部门是哪五个部门？"))
+    # with open("info.txt", "r", encoding="utf-8") as f:
+    #     for line in f.readlines():
+    #         print(line, "\n")
+    #         print(bot.ask_med(line).replace("\n\n", "\n"))
+    #         print("\n\n===========================\n\n")
+    #         break
