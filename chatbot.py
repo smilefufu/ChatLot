@@ -126,7 +126,7 @@ class LLMBot:
         return result
     
     async def ask_med_knowledge(self, med_name, context):
-        prompt = f"结合语境`{context}`告诉我这些药品：`{'、'.join(med_name)}`的活性成分、通用名、商品名、药品分类、药物剂型这五个字段。如果字段中存在未知或你不确定的字段，一律返回空，以json的形式回答。"
+        prompt = f"结合语境`{context}`告诉我这些药品：`{'、'.join(med_name)}`的活性成分、通用名、商品名、药品分类、药物剂型这五个字段。如果字段中存在未知或你不确定的字段，一律返回空，以json的形式回答，json的key是药品名称，value是对应的五个字段的对象。"
         answer = await self.async_chat(prompt)
         json_list = extract_json_from_markdown(answer)
         result = json_list[0] if json_list else []
