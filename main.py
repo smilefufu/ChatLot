@@ -56,6 +56,10 @@ async def ask_med_endpoint(queries: List[KnowledgeQuery]):
             llm_bot = LLMBot()
             logging.info(query)
             result = await llm_bot.ask_med_knowledge(query.name, query.context)
+            for value in result.values():
+                for k in value:
+                    if value[k] == "未知":
+                        value[k] = ""
             data.append({"id": query.id, "result": result})
         except Exception as e:
             logging.info(traceback.format_exc())
