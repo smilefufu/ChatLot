@@ -96,7 +96,7 @@ class LLMBot:
         if group_name == "手术操作":
             # 先区分出手术来
             result = []
-            prompt = prompts.MED_PROMPT_SURGERY_DISTINCT.format(question=question)
+            prompt = prompts.MED_PROMPT_SURGERY_DISTINCT.format(question=question, columns=columns, surg="、".join(extra), len_surg=len(extra))
             r = await self.async_chat(prompt)
             json_result = extract_json_from_markdown(r)
             json_result = json_result[0] if json_result else []

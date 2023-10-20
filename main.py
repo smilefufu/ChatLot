@@ -21,7 +21,7 @@ class Query(BaseModel):
     extra: list
 
 
-@app.post("/llm_relation_extract/")
+@app.post("/llm_relation_extract")
 async def ask_med_endpoint(query: Query):
     try:
         llm_bot = LLMBot()
