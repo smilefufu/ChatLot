@@ -100,6 +100,7 @@ class LLMBot:
             r = await self.async_chat(prompt)
             json_result = extract_json_from_markdown(r)
             json_result = json_result[0] if json_result else []
+            logging.info(json_result)
             for surgery in json_result:
                 surgery_name = surgery["手术名称"]
                 surgery_text = surgery["描述"]
