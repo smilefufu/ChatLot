@@ -224,3 +224,11 @@ MED_PROMPT_SURGERY_DISTINCT = """病历：`{question}`
 
 MED_PROMPT_SURGERY2 = """描述：`{text}`
 分析上述关于手术{surgery_name}的描述，先判断`"""+surgery_columns+"""`这些字段要求中，哪些字段在描述有相关内容，然后针对这些有相关内容的字段进行总结和实体词提取，无相关内容的字段不要回答。`手术相关症状/诊断`和`手术相关症状/诊断存在状态`的内容需要一一对应。以json的格式回答。"""
+
+medicine_column = "、".join(_MED_COLUMN_MED.split("\n"))
+MED_PROMPT_MEDICINE_PRE = """病历：`{question}`
+附录：
+""" + medicine_column + """
+逐字分析上述病历。每当有一个药品名被提及时，则记录一次该药品名。以json格式回答。
+让我们一步一步思考
+"""

@@ -15,6 +15,7 @@ load_dotenv()
 API_KEY = os.getenv("AK")
 SECRET_KEY = os.getenv("SK")
 
+CACHE = {}
 
 class LLMBot:
     """聊天机器人"""
@@ -113,10 +114,20 @@ class LLMBot:
                 if json_result:
                     result.append(json_result[0])
             return result
+        elif group_name == "药品表":
+            prompt = prompts.MED_PROMPT_MEDICINE_PRE.format(question=question, columns=columns)
+            logging.info(prompt)
         else:
             prompt = prompts.MED_PROMPT.format(question=question, group_name=group_name, columns=columns)
         # self.llm_config["system"] = "你是一名病历分析助手，根据用户提供的病历和要求分析的字段，提取实体词到json中。要求分析的字段中，如有未在病历中提及的，则不必提取。"
-        answer =  await self.async_chat(prompt)
+        answer = await self.async_chat(prompt)
+        json_list = extract_json_from_markdown(answer)
+        result = json_list[0] if json_list else []
+        return result
+    
+    async def ask_med_knowledge(self, med_name, context):
+        prompt = f"结合语境`{context}`告诉我这些药品`{'、'.join(med_name)}`的活性成分、通用名、商品名、药品分类、药物剂型这五个字段。如果字段中存在未知或你不确定的字段，一律返回空。以json列表的形式回答。"
+        answer = await self.async_chat(prompt)
         json_list = extract_json_from_markdown(answer)
         result = json_list[0] if json_list else []
         return result

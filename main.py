@@ -1,6 +1,7 @@
 
 import traceback
 import logging
+from typing import List
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -15,14 +16,18 @@ logging.basicConfig(
 app = FastAPI()
 
 
-class Query(BaseModel):
+class ExtractQuery(BaseModel):
     text: str       # 手术操作、病理检查、淋巴结病理、药品表、分子病理和免疫组化
     category: str
     extra: list
 
+class KnowledgeQuery(BaseModel):
+    id: int
+    name: list
+    context: str
 
 @app.post("/llm_relation_extract")
-async def ask_med_endpoint(query: Query):
+async def ask_med_endpoint(query: ExtractQuery):
     try:
         llm_bot = LLMBot()
         # answers = await llm_bot.ask_med(query.text)
@@ -41,3 +46,18 @@ async def ask_med_endpoint(query: Query):
     except Exception as e:
         logging.info(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/llm_knowledge")
+async def ask_med_endpoint(queries: List[KnowledgeQuery]):
+    data = []
+    for query in queries:
+        try:
+            llm_bot = LLMBot()
+            logging.info(query)
+            result = await llm_bot.ask_med_knowledge(query.name, query.context)
+            data.append({"id": query.id, "result": result})
+        except Exception as e:
+            logging.info(traceback.format_exc())
+            raise HTTPException(status_code=500, detail=str(e)) from e
+    return data
