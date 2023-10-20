@@ -31,9 +31,12 @@ async def ask_med_endpoint(query: Query):
         #     json_list = extract_json_from_markdown(answer)
         #     result[key] = json_list[0] if json_list else None
         # return {"result": result}
-        answer = await llm_bot.ask_med_catetory(query.category, query.text, query.extra)
-        json_list = extract_json_from_markdown(answer)
-        result = json_list[0] if json_list else None
+        result = await llm_bot.ask_med_catetory(query.category, query.text, query.extra)
+        if query.category == "手术操作":
+            for r in result:
+                for k, v in list(r.items()):
+                    if v == "未知" or v == [] or v == "":
+                        del r[k]
         return {"result": result}
     except Exception as e:
         logging.info(traceback.format_exc())

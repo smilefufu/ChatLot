@@ -2,13 +2,14 @@
 import os
 import time
 import json
-import urllib.parse
+import logging
 
 from dotenv import load_dotenv
 import aiohttp
 import requests
 
 import prompts
+from utils import extract_json_from_markdown
 
 load_dotenv()
 API_KEY = os.getenv("AK")
@@ -20,7 +21,7 @@ class LLMBot:
     def __init__(self, api_key=None, secret_key=None, llm_config=None):
         self.api_key = api_key or API_KEY
         self.secret_key = secret_key or SECRET_KEY
-        self.llm_config = llm_config or {}
+        self.llm_config = llm_config or {"top_p": 0, "temperature": 0.01}
 
     def async_request(self, url, data=None, method="POST"):
         """异步请求"""
@@ -72,6 +73,7 @@ class LLMBot:
         url = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions_pro?access_token=" + self.get_access_token()
         payload = {"messages": history, **self.llm_config}
         resp = await self.async_request(url, method="POST", data=json.dumps(payload))
+        logging.info(resp)
         return resp["result"]
     
     def ask_monthly_attendance(self, question):
@@ -92,10 +94,31 @@ class LLMBot:
         group_name = category
         columns = prompts.MED_COLUMNS[group_name]
         if group_name == "手术操作":
-            prompt = prompts.MED_PROMPT_SURGERY.format(question=question, columns=columns, surg="、".join(extra), len_surg=len(extra))
+            # 先区分出手术来
+            result = []
+            prompt = prompts.MED_PROMPT_SURGERY_DISTINCT.format(question=question)
+            r = await self.async_chat(prompt)
+            json_result = extract_json_from_markdown(r)
+            json_result = json_result[0] if json_result else []
+            for surgery in json_result:
+                surgery_name = surgery["手术名称"]
+                surgery_text = surgery["描述"]
+                # prompt = prompts.MED_PROMPT_SURGERY.format(question=question, columns=columns, surg="、".join(extra), len_surg=len(extra))
+                prompt = prompts.MED_PROMPT_SURGERY2.format(text=surgery_text, surgery_name=surgery_name)
+                logging.info(prompt)
+                r = await self.async_chat(prompt)
+                json_result = extract_json_from_markdown(r)
+                logging.info("找到json result：%s", json_result)
+                if json_result:
+                    result.append(json_result[0])
+            return result
         else:
             prompt = prompts.MED_PROMPT.format(question=question, group_name=group_name, columns=columns)
-        return await self.async_chat(prompt)
+        # self.llm_config["system"] = "你是一名病历分析助手，根据用户提供的病历和要求分析的字段，提取实体词到json中。要求分析的字段中，如有未在病历中提及的，则不必提取。"
+        answer =  await self.async_chat(prompt)
+        json_list = extract_json_from_markdown(answer)
+        result = json_list[0] if json_list else []
+        return result
 
 
 if __name__ == "__main__":
